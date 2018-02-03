@@ -1,0 +1,73 @@
+---
+# TODO: for now we take the PXE environment for granted, so won't install and configure DHCP and TFTP servers; that should become another block defaulting not to be processed
+- name: update the SmartOS platform image on the PXE server
+  hosts:
+    - pxe_server
+  gather_facts: no
+  vars:
+    notification_recipient: tamas@gerczei.eu
+    smarthost: mail
+    tftp_dir: /data/tftproot
+    image_dir: "{{ tftp_dir }}/smartos"
+    tftp_user: tftp
+    tftp_group: tftp
+    download: false # prior download
+  tasks:
+
+    - name: fetch platform image
+      get_url:
+        src: https://us-east.manta.joyent.com/Joyent_Dev/public/SmartOS/platform-latest.tgz # no Manta at eu-ams-1
+        dest: /var/tmp/
+      when: download
+
+    - name: obtain provided platform image
+      copy:
+        src: /var/tmp/platform-latest.tgz
+        dest: /tmp/
+        remote_src: yes
+      register: tarball
+
+    - name: process new tarball
+      block:
+
+        - name: extract new platform image
+          unarchive:
+            src: /tmp/platform-latest.tgz
+            dest: "{{ image_dir }}"
+            extra_opts:
+              - --transform
+              - 's/^platform-//;s/i86pc/platform\/i86pc/'
+            remote_src: yes
+            owner: "{{ tftp_user }}"
+            group: "{{ tftp_group }}"
+          become: yes
+
+        - name: find images
+          find:
+            paths: "{{ image_dir }}"
+            file_type: directory
+          register: found_images
+
+        - name: determine latest release
+          set_fact:
+            last_release: "{{ ( found_images.files | sort(attribute='mtime',reverse=true) | first )['path'] | basename }}"
+
+        - name: generate iPXE configuration
+          template:
+            src: smartos_ipxe.j2
+            dest: "{{ tftp_dir }}/smartos.ipxe"
+            owner: "{{ tftp_user }}"
+            group: "{{ tftp_group }}"
+            backup: yes
+          become: yes
+
+        - name: send e-mail notification
+          mail:
+            host: "{{ smarthost }}"
+            from: "Raspi Root <noreply@fejezd.be>"
+            to: "{{ notification_recipient }}"
+            subject: "SmartOS update ({{ last_release }}) available"
+            body: "created {{ image_dir }}/{{ last_release }} and {{ tftp_dir }}/smartos.ipxe"
+
+      when: tarball|changed
+
