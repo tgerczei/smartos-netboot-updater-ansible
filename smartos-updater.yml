@@ -1,17 +1,17 @@
 ---
 # TODO: for now we take the PXE environment for granted, so won't install and configure DHCP and TFTP servers; that should become another block defaulting not to be processed
-- name: update the SmartOS platform image on the PXE server
+- name: prepare current SmartOS platform image for netbooting on a PXE server
   hosts:
     - pxe_server
   gather_facts: no
   vars:
+    download: False # prior download
     notification_recipient: tamas@gerczei.eu
     smarthost: mail
     tftp_dir: /data/tftproot
     image_dir: "{{ tftp_dir }}/smartos"
     tftp_user: tftp
     tftp_group: tftp
-    download: false # prior download
   tasks:
 
     - name: fetch platform image
