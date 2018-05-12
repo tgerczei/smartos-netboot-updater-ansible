@@ -10,8 +10,8 @@
     smarthost: mail
     tftp_dir: /data/tftproot
     image_dir: "{{ tftp_dir }}/smartos"
-    tftp_user: tftp
-    tftp_group: tftp
+    tftp_user: nobody
+    tftp_group: nogroup
   tasks:
 
     - name: fetch platform image
