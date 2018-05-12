@@ -75,5 +75,5 @@
             subject: "SmartOS update ({{ last_release }}) available"
             body: "created {{ image_dir }}/{{ last_release }} and {{ tftp_dir }}/smartos.ipxe"
 
-      when: tarball|changed
+      when: tarball is changed
 
