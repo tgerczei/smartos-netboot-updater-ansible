@@ -27,6 +27,12 @@
         remote_src: yes
       register: tarball
 
+    - name: ensure directories exist
+      file:
+        path: "{{ image_dir }}"
+        state: directory
+      become: yes
+
     - name: process new tarball
       block:
 
