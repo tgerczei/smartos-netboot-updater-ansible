@@ -8,6 +8,7 @@
     download: False # prior download
     notification_recipient: tamas@gerczei.eu
     smarthost: mail
+    smarthost_port: 25
     tftp_dir: /data/tftproot
     image_dir: "{{ tftp_dir }}/smartos"
     tftp_user: nobody
@@ -70,6 +71,7 @@
         - name: send e-mail notification
           mail:
             host: "{{ smarthost }}"
+            port: "{{ smarthost_port }}"
             from: "Raspi Root <noreply@fejezd.be>"
             to: "{{ notification_recipient }}"
             subject: "SmartOS update ({{ last_release }}) available"
