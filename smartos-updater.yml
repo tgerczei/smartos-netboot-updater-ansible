@@ -10,14 +10,21 @@
     smarthost: mail
     smarthost_port: 25
     tftp_dir: /data/tftproot
+    smarthost_user: "{{ notification_recipient }}"
+    smarthost_pw: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          34613034663131326532666239633964353161363662323531623161383262303630616163346662
+          3436633337346164383335333437303131313662633936310a376230613533393963633661333263
+          35366530333134633661643662646638663438643466333362323235653034643636663434396363
+          6562393836613165320a303436343535303362366335383132346636323037623634636161316437
+          6564
     image_dir: "{{ tftp_dir }}/smartos"
     tftp_user: nobody
     tftp_group: nogroup
   tasks:
-
     - name: fetch platform image
       get_url:
-        src: https://us-east.manta.joyent.com/Joyent_Dev/public/SmartOS/platform-latest.tgz # no Manta at eu-ams-1
+        url: https://us-east.manta.joyent.com/Joyent_Dev/public/SmartOS/platform-latest.tgz # no Manta at eu-ams-1
         dest: /var/tmp/
       when: download
 
@@ -72,10 +79,12 @@
           mail:
             host: "{{ smarthost }}"
             port: "{{ smarthost_port }}"
-            from: "Raspi Root <noreply@fejezd.be>"
+            secure: starttls
+            username: "{{ smarthost_user }}"
+            password: "{{ smarthost_pw }}"
+            from: "Ansible <noreply@fejezd.be>"
             to: "{{ notification_recipient }}"
             subject: "SmartOS update ({{ last_release }}) available"
             body: "created {{ image_dir }}/{{ last_release }} and {{ tftp_dir }}/smartos.ipxe"
 
       when: tarball is changed
-
